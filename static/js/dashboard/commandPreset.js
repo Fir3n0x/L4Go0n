@@ -147,12 +147,21 @@ function makeModalDraggable(modalId, handleId) {
 }
 
 // Handle key for new command template creation modal
-document.getElementById('new-command-template-modal').addEventListener('keydown', (e) => {
-    const createPresetModal = document.getElementById('new-command-template-modal');
-    if (e.key === 'Escape' && !createPresetModal.classList.contains('hidden')) {
-        closeNewCommandTemplateModal();
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+
+  const modals = [
+    { id: 'new-preset-modal', close: closeNewCommandTemplateModal },
+    { id: 'modify-preset-modal', close: closeModifyPresetModal }
+  ];
+
+  modals.forEach(({ id, close }) => {
+    const modal = document.getElementById(id);
+    if (modal && !modal.classList.contains('hidden')) {
+      close();
     }
-})
+  });
+});
 
 // Delete a preset by its name
 function deletePreset(name) {
