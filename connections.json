@@ -1,35 +1,23 @@
 {
- "1756471408273": {
-  "name": "testt_ancien",
-  "id": "1756471408273",
-  "ip": "192.168.10.14",
+ "1756482712823": {
+  "name": "agent01",
+  "id": "1756482712823",
+  "ip": "172.25.16.1",
   "os": "windows",
-  "srcport": "49936",
-  "dstport": "22",
-  "lastConnection": "2025-08-29 14:43:58.422",
-  "type": "stealthy",
+  "srcport": "8624",
+  "dstport": "53",
+  "lastConnection": "2025-08-29 17:54:10.555",
+  "type": "simple",
   "icon": "calc",
   "reachable": false
  },
- "1756471593584": {
-  "name": "fffff",
-  "id": "1756471593584",
-  "ip": "192.168.10.14",
-  "os": "windows",
-  "srcport": "49958",
-  "dstport": "22",
-  "lastConnection": "2025-08-29 14:50:59.113",
-  "type": "stealthy",
-  "icon": "calc",
-  "reachable": false
- },
- "1756472212432": {
+ "1756482721383": {
   "name": "calc",
-  "id": "1756472212432",
+  "id": "1756482721383",
   "ip": "—",
   "os": "windows",
   "srcport": "—",
-  "dstport": "22",
+  "dstport": "53",
   "lastConnection": "Not Yet",
   "type": "stealthy",
   "icon": "calc",

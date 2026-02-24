@@ -12,6 +12,11 @@
   "Remove-Item \\\"$env:TEMP\\\\message.txt\\\"",
   "Stop-Process -Name \\\"notepad\\\""
  ],
+ "notepad démo1": [
+  "\\\"hacked\\\" | Out-File -FilePath \\\"$env:TEMP\\\\message.txt\\\"",
+  "Start-Process notepad.exe \\\"$env:TEMP\\\\message.txt\\\"",
+  "Remove-Item \\\"$env:TEMP\\\\message.txt\\\""
+ ],
  "notepad démo2": [
   "\\\"hacked\\\" | Out-File -FilePath \\\"$env:TEMP\\\\message.txt\\\"",
   "Start-Process notepad.exe \\\"$env:TEMP\\\\message.txt\\\"",
@@ -27,7 +32,14 @@
  "stealer": [
   "whoami",
   "ipconfig",
-  "get-process"
+  "get-process",
+  "dir"
+ ],
+ "stealer1": [
+  "whoami",
+  "ipconfig",
+  "get-process",
+  "dir"
  ],
  "test variable save": [
   "$PI = 3",
