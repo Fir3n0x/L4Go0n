@@ -1,16 +1,18 @@
 package cmd
 
-
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
-	"crypto/rand"
+	"fmt"
 	"os"
 )
 
-func loadOrGenerateKey(filePath string) (*ecdsa.PrivateKey, error) {
+var ServerPublicKey *ecdsa.PublicKey
+
+func LoadOrGenerateKey(filePath string) (*ecdsa.PrivateKey, error) {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		// Generate a new key if the file does not exist
 		privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -26,6 +28,10 @@ func loadOrGenerateKey(filePath string) (*ecdsa.PrivateKey, error) {
 		}
 		pemData := pem.EncodeToMemory(pemBlock)
 		err = os.WriteFile(filePath, pemData, 0600)
+		if err != nil {
+			return nil, err
+		}
+
 		return privateKey, err
 	}
 
@@ -36,5 +42,22 @@ func loadOrGenerateKey(filePath string) (*ecdsa.PrivateKey, error) {
 	}
 
 	block, _ := pem.Decode(data)
-	return x509.ParseECPrivateKey(block.Bytes)
+	if block == nil || block.Type != "EC PRIVATE KEY" {
+        return nil, fmt.Errorf("invalid PEM block type: %v", block.Type)
+    }
+	
+	privateKey, err := x509.ParseECPrivateKey(block.Bytes)
+    if err != nil {
+        return nil, err
+    }
+
+    return privateKey, nil
+}
+
+func ExportPublicKeyToPEM(pub *ecdsa.PublicKey) []byte {
+    der, err := x509.MarshalPKIXPublicKey(pub)
+    if err != nil {
+        return nil
+    }
+    return pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: der})
 }
