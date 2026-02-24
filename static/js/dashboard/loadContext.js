@@ -10,8 +10,6 @@ let updatedReports = new Set();
 let agentName = new Map();
 // Save the order of reports (by clientID) regarding timestamp
 let updatedOrder = [];
-// Variable to follow the current selected preset to set an animation
-let currentSelectedPreset = null;
 // Graph variable
 let cy;
 
@@ -290,16 +288,13 @@ function loadGraph() {
 /*  Presets                  */
 /* ------------------------- */
 function loadPresets() {
-  const filter = document.getElementById('preset-list-filter').value.toLowerCase();
-
   fetch('/api/command-template-presets')
     .then(res => res.ok ? res.json() : Promise.reject())
     .then(presets => {
       const container = document.getElementById('preset-list');
       document.getElementById('selected-preset').textContent = "NONE";
       document.getElementById('preset-content').innerHTML = ''; // Clear content overview
-      currentSelectedPreset = null;
-
+      
       const cmdDefaultBlock = document.createElement('p');
       cmdDefaultBlock.className = 'text-gray-400';
       cmdDefaultBlock.textContent = 'No preset selected.';
@@ -308,9 +303,6 @@ function loadPresets() {
       container.innerHTML = ''; // Clear existing
 
       Object.keys(presets).forEach(name => {
-        // Filter
-        if (!name.toLowerCase().includes(filter)) return;
-
         const tag = document.createElement('div');
         tag.className = 'preset-tag';
 
@@ -323,16 +315,6 @@ function loadPresets() {
         closeBtn.onclick = () => deletePreset(name);
 
         tag.addEventListener('click', () => {
-          // Handle animation
-          if (currentSelectedPreset) {
-            currentSelectedPreset.classList.remove('preset-tag--active');
-          }
-
-          // Add animation to newly selected tag
-          tag.classList.add('preset-tag--active');
-          currentSelectedPreset = tag;
-
-
           // Update selected preset
           document.getElementById('selected-preset').textContent = name;
 
@@ -342,10 +324,10 @@ function loadPresets() {
 
           // Display each command
           presets[name].forEach((cmd, index) => {
-            const cmdLine = document.createElement('pre');
-            cmdLine.className = 'whitespace-pre-wrap';
-            cmdLine.innerHTML = `<span class="text-green-400">$</span> <span class="text-gray-400">${cmd}</span>`;
-            content.appendChild(cmdLine);
+            const cmdBlock = document.createElement('div');
+            cmdBlock.className = 'bg-gray-700 text-white px-3 py-2 rounded mb-2';
+            cmdBlock.textContent = `${index + 1}. ${cmd}`;
+            content.appendChild(cmdBlock);
           });
         })
 
@@ -359,25 +341,14 @@ function loadPresets() {
     });
 }
 
-// Refresh filtering for list preset command
-document.getElementById('preset-list-filter').addEventListener('input', loadPresets);
-
-// Load preset command list in modal template for selection
 function loadModalPresets() {
-  const filter = document.getElementById('template-command-filter').value.toLowerCase();
-
   fetch('/api/command-template-presets')
     .then(res => res.ok ? res.json() : Promise.reject())
     .then(presets => {
       const container = document.getElementById('preset-template-list');
-      const queue = document.getElementById('queue-template-list');
-      queue.innerHTML = '';
       container.innerHTML = '';
 
       Object.entries(presets).forEach(([name, commands]) => {
-        // Filter
-        if (!name.toLowerCase().includes(filter)) return;
-
         const tag = document.createElement('div');
         tag.className = 'preset-tag bg-gray-700 text-white px-3 py-2 rounded cursor-pointer flex justify-between items-center hover:bg-gray-600';
 
@@ -386,7 +357,7 @@ function loadModalPresets() {
 
         tag.appendChild(label);
         tag.onclick = () => {
-          addToQueue(name);
+          commands.forEach(cmd => addToQueue(cmd));
         };
 
         container.appendChild(tag);
@@ -397,11 +368,6 @@ function loadModalPresets() {
     .catch(() => console.error('Error when loading presets for modal'));
 }
 
-// Refresh filtering for modal preset command
-document.getElementById('template-command-filter').addEventListener('input', loadModalPresets);
-
-
-// Add preset command to queue
 function addToQueue(commandText) {
   const queue = document.getElementById('queue-template-list');
 
@@ -433,7 +399,6 @@ function addToQueue(commandText) {
   queue.appendChild(item);
 }
 
-// Handle drag & drop in queue preset list
 function enableQueueDragAndDrop() {
   const queue = document.getElementById('queue-template-list');
 
@@ -449,7 +414,6 @@ function enableQueueDragAndDrop() {
   });
 }
 
-// Process drag element queue preset list
 function getDragAfterElement(container, y) {
   const draggableElements = [...container.querySelectorAll('.queue-item:not(.dragging)')];
 

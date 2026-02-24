@@ -16,7 +16,6 @@ type AgentConfig struct {
 	PORT_SERVER string
 	TYPE        string
 	OS          string
-	ServerPublicKey []byte
 }
 
 // Generate an agent regarding given AgentConfig structure

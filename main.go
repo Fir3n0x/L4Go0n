@@ -17,30 +17,9 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-var (
-	upgrader = websocket.Upgrader{}
-	serverKeyPath = "key/server_key.pem"
-)
+var upgrader = websocket.Upgrader{}
 
 func main() {
-
-	// Ensure the keys directory exists
-	if _, err := os.Stat("key"); os.IsNotExist(err) {
-		err := os.Mkdir("key", 0700)
-		if err != nil {
-			log.Fatalf("Failed to create key directory: %v", err)
-		}
-	}
-
-	// Load or generate server key
-	privateKey, err := cmd.LoadOrGenerateKey(serverKeyPath)
-	if err != nil {
-		log.Fatalf("Failed to load or generate key: %v", err)
-	}
-
-	// Load server public key
-	cmd.ServerPublicKey = &privateKey.PublicKey
-
 	// Init data (Log, Command, Client)
 	initLogging()
 	initCommandStore()
