@@ -1,5 +1,23 @@
 {
- "eee": [
-  "eee"
+ "notepad démo": [
+  "\\\"hacked\\\" | Out-File -FilePath \\\"$env:TEMP\\\\message.txt\\\"",
+  "Start-Process notepad.exe \\\"$env:TEMP\\\\message.txt\\\"",
+  "Remove-Item \\\"$env:TEMP\\\\message.txt\\\""
+ ],
+ "notepad démo2": [
+  "\\\"hacked\\\" | Out-File -FilePath \\\"$env:TEMP\\\\message.txt\\\"",
+  "Start-Process notepad.exe \\\"$env:TEMP\\\\message.txt\\\"",
+  "Remove-Item \\\"$env:TEMP\\\\message.txt\\\"",
+  "\\\"hacked\\\" | Out-File -FilePath \\\"$env:TEMP\\\\message.txt\\\"",
+  "Start-Process notepad.exe \\\"$env:TEMP\\\\message.txt\\\"",
+  "Remove-Item \\\"$env:TEMP\\\\message.txt\\\"",
+  "\\\"hacked\\\" | Out-File -FilePath \\\"$env:TEMP\\\\message.txt\\\"",
+  "Start-Process notepad.exe \\\"$env:TEMP\\\\message.txt\\\"",
+  "Remove-Item \\\"$env:TEMP\\\\message.txt\\\"",
+  "Stop-Process -Name \\\"notepad\\\""
+ ],
+ "test variable save": [
+  "$PI = 3",
+  "Write-Host \\\"The value of $PI.\\\""
  ]
 }

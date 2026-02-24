@@ -322,9 +322,7 @@ function updateWatchedConnections() {
 }
 
 // send command to all watched connections
-function sendCommand() {
-  const cmd = document.getElementById('in-command').value
-
+async function sendCommand(cmd) {
   if (!watched.size) {
     alert("No agent selected...")
     return
@@ -338,20 +336,25 @@ function sendCommand() {
 
   for (const id of watched) {
     // if(!confirm(`Send command '${cmd}' to #${id} ? `)) continue;
-    fetch(`/api/send-command?id=${encodeURIComponent(id)}&cmd=${encodeURIComponent(cmd)}`, {
+    await fetch(`/api/send-command?id=${encodeURIComponent(id)}&cmd=${encodeURIComponent(cmd)}`, {
       method: 'POST'
     });
     loadCommands();
   }
-
-  document.getElementById('in-command').value = '';
 }
 
 document.getElementById('in-command').addEventListener('keydown', function (e) {
   if (e.key === 'Enter') {
-    sendCommand();
+    sendCommandFromInput();
   }
 });
+
+// send command from preset to all watched connections
+async function sendCommandFromInput() {
+  const cmd = document.getElementById('in-command').value;
+  await sendCommand(cmd);
+  document.getElementById('in-command').value = '';
+}
 
 // select all connections (in active tab)
 function selectAllConnection() {

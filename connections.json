@@ -2,11 +2,11 @@
  "1756286529458": {
   "name": "36",
   "id": "1756286529458",
-  "ip": "—",
+  "ip": "192.168.10.14",
   "os": "windows",
-  "srcport": "—",
+  "srcport": "50669",
   "dstport": "22",
-  "lastConnection": "Not Yet",
+  "lastConnection": "2025-08-28 17:08:41.071",
   "type": "simple",
   "icon": "none",
   "reachable": false
