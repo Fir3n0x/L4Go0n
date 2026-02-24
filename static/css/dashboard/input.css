@@ -1,0 +1,242 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* blinking animation for agent reachable - terminal */
+.blinking {
+  animation: blink 2.5s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Tabs styles buttons */
+  .tab-button {
+    @apply bg-gray-900 text-white px-4 py-2 rounded-t-lg cursor-pointer;
+  }
+  .tab-button:hover {
+    @apply bg-blue-300 text-gray-900;
+  }
+
+/* Active tab style */
+
+.active-tab {
+    background-color: #93c5fd; /* bg-blue-300 */
+    color: #1f2937;            /* text-gray-900 */
+  }
+  .tab-button {
+    background-color: #111827; /* bg-gray-900 */
+    color: white;
+  }
+
+  .tab-button:hover {
+    background-color: #93c5fd; /* hover:bg-blue-300 */
+    color: #1f2937;            /* hover:text-gray-900 */
+  }
+
+  .active-tab {
+    background-color: #93c5fd;
+    color: #1f2937;
+  }
+
+/* scan line on each item - active agent effect */
+@keyframes scanline {
+  0%   { transform: translateY(-100%); }
+  50%  { transform: translateY(100%); }
+  100% { transform: translateY(100%); }
+}
+
+/* basic style for each draggable command */
+.command-item {
+  @apply relative flex justify-between items-center bg-gray-800
+         rounded p-2 cursor-move overflow-hidden;
+}
+
+/* slight glitch on the text (command modal) */
+.command-item span {
+  position: relative;
+}
+
+.command-item span::before {
+  content: attr(data-cmd);
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  color: #10B981;
+  text-shadow: -1px 0 #088F70;
+  clip: rect(0, 0, 0, 0);
+  animation: glitch-text 2s infinite ease-in-out;
+}
+
+/* blinking effect on new report */
+@keyframes blinkReport {
+  0%, 100% { box-shadow: 0 0 0 rgba(16,185,129,0.7); }
+  50%      { box-shadow: 0 0 8px rgba(16,185,129,0.7); }
+}
+
+.highlight-report {
+  animation: blinkReport 1s infinite ease-in-out;
+}
+
+/* glitch text animation */
+@keyframes glitch-text {
+  0%   { clip: rect(5px, 9999px, 10px, 0); transform: translate(0);}
+  20%  { clip: rect(20px,9999px,25px,0); transform: translate(-2px,-1px);}
+  40%  { clip: rect(35px,9999px,40px,0); transform: translate(2px,1px);}
+  60%  { clip: rect(50px,9999px,55px,0); transform: translate(-1px,2px);}
+  80%  { clip: rect(65px,9999px,70px,0); transform: translate(1px,-2px);}
+  100% { clip: rect(5px, 9999px,10px, 0); transform: translate(0);}
+}
+
+
+@layer components {
+  /* Glitch on title */
+  @keyframes glitch {
+    0%   { clip: rect(20px, 9999px, 25px, 0); transform: translate(0); }
+    20%  { clip: rect(50px, 9999px, 55px, 0); transform: translate(-1px, -1px); }
+    40%  { clip: rect(30px, 9999px, 35px, 0); transform: translate(1px, 1px); }
+    60%  { clip: rect(60px, 9999px, 65px, 0); transform: translate(-1px, 1px); }
+    80%  { clip: rect(40px, 9999px, 45px, 0); transform: translate(1px, -1px); }
+    100% { clip: rect(20px, 9999px, 25px, 0); transform: translate(0); }
+  }
+
+  /* Style of each connection card */
+  .connection-card {
+    @apply relative bg-black p-3 rounded mb-2 cursor-pointer;
+  }
+
+  .connection-card--active {
+    @apply relative bg-black border border-green-500
+           p-3 rounded mb-2 cursor-pointer overflow-hidden;
+  }
+  .connection-card--active::after {
+    content: "";
+    position: absolute; top: -100%; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(
+      to bottom,
+      rgba(0,0,0,0) 0%,
+      rgba(16,185,129,0.2) 50%,
+      rgba(0,0,0,0) 100%
+    );
+    animation: scanline 3s linear infinite;
+    pointer-events: none;
+  }
+
+  /* Scrollbar néon logs */
+  #logs::-webkit-scrollbar {
+    width: 6px;
+  }
+  #logs::-webkit-scrollbar-track {
+    background: #111;
+  }
+  #logs::-webkit-scrollbar-thumb {
+    background: #10b981;
+    border-radius: 3px;
+  }
+
+  /* Scrollbar néon log modal */
+  #logs-modal-output::-webkit-scrollbar {
+    width: 6px;
+  }
+  #logs-modal-output::-webkit-scrollbar-track {
+    background: #111;
+  }
+  #logs-modal-output::-webkit-scrollbar-thumb {
+    background: #10b981;
+    border-radius: 3px;
+  }
+
+  /* Scrollbar néon connection */
+  .connections-list::-webkit-scrollbar {
+    width: 6px;
+  }
+  .connections-list::-webkit-scrollbar-track {
+    background: #111;
+  }
+  .connections-list::-webkit-scrollbar-thumb {
+    background: #10b981;
+    border-radius: 3px;
+  }
+
+  /* Scrollbar néon watched list */
+  #watched-list::-webkit-scrollbar {
+    width: 6px;
+  }
+  #watched-list::-webkit-scrollbar-track {
+    background: #111;
+  }
+  #watched-list::-webkit-scrollbar-thumb {
+    background: #10b981;
+    border-radius: 3px;
+  }
+
+    /* Scrollbar néon command */
+  .commands-list::-webkit-scrollbar {
+    width: 6px;
+  }
+  .commands-list::-webkit-scrollbar-track {
+    background: #111;
+  }
+  .commands-list::-webkit-scrollbar-thumb {
+    background: #10b981;
+    border-radius: 3px;
+  }
+
+    /* Scrollbar néon report */
+  .reports-list::-webkit-scrollbar {
+    width: 6px;
+  }
+  .reports-list::-webkit-scrollbar-track {
+    background: #111;
+  }
+  .reports-list::-webkit-scrollbar-thumb {
+    background: #10b981;
+    border-radius: 3px;
+  }
+}
+
+/* Sidebar styles - burger animation extension and retraction sidebar */
+@layer components {
+  .sidebar {
+    @apply w-1/5 overflow-hidden relative transition-all duration-300 ease-in-out;
+    will-change: width;
+  }
+
+  /* collapsed */
+  .sidebar.collapsed {
+    @apply w-12 px-2;
+  }
+
+  /* header normal */
+  .sidebar-header {
+    @apply flex items-center justify-between mb-4;
+  }
+
+  /* animated title */
+  .sidebar-title {
+    @apply transition-all duration-200 ease-in-out overflow-hidden;
+  }
+  .sidebar.collapsed .sidebar-title {
+    @apply w-0 opacity-0 pointer-events-none; /* no more space */
+  }
+
+  /* masked content in collapsed */
+  .sidebar-content {
+    @apply transition-all duration-200 ease-in-out;
+  }
+  .sidebar.collapsed .sidebar-content {
+    @apply opacity-0 pointer-events-none h-0 overflow-hidden;
+  }
+
+  /* button : static by default, collapsed -> absolute, always visible */
+  .sidebar #toggle-sidebar-btn {
+    @apply p-2 rounded hover:bg-gray-700 z-40 transition-all;
+  }
+  .sidebar.collapsed #toggle-sidebar-btn {
+    @apply absolute left-2 top-4; /* static position in retracted sidebar */
+  }
+}

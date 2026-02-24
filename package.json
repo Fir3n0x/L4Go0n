@@ -1,0 +1,18 @@
+{
+  "devDependencies": {
+    "tailwindcss": "^3.3.2"
+  },
+  "name": "my-c2-dashboard",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:dashboard": "npx tailwindcss -i ./static/css/dashboard/input.css -o ./static/css/dashboard/dashboard.css --minify",
+    "build:login": "npx tailwindcss -i ./static/css/login/input.css -o ./static/css/login/login.css --minify",
+    "build:all": "npm run build:dashboard && npm run build:login"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

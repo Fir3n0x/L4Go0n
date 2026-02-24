@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ .Title }}</title>
+
+  <!-- Tailwind CDN & style -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/login/login.css" media="all">
+</head>
+<body class="font-mono" style="background-color: #000;">
+
+  <!-- Intro splash -->
+  <div
+    id="intro-animation"
+    class="fixed inset-0 bg-black opacity-0 transition-opacity duration-500 ease-in-out"
+  ></div>
+
+  <!-- Container centered -->
+  <div
+    id="login-box"
+    class="hidden flex flex-col justify-center items-center min-h-screen text-center"
+  >
+
+    <!-- Customized comonent -->
+    <div class="login-card fade-in">
+      <!-- Wrapper inline for title + separator -->
+      <div class="inline-block text-center mb-10">
+        <div class="relative flex justify-center items-center">
+          <img 
+            src="/static/img/login/logo-l4go0n.png" 
+            alt="L4Go0n Logo"
+            class="w-64 drop-shadow-[0_0_20px_#00ffff] neon-glow"
+          />
+        </div>
+        <!-- line under logo -->
+        <div class="w-full border-b-2 border-gray-900 mt-6 mb-8"></div>
+      </div>
+
+      <!-- input-card, smaller than login-card -->
+      <div class="input-card">
+        <form method="POST" action="/login" class="flex flex-col items-center">
+          <input
+            type="text"
+            name="username"
+            placeholder="Username"
+            required
+            class="bg-black text-white border border-black p-2 m-2
+                  text-lg rounded focus:outline-none focus:ring-2 focus:ring-white"
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            required
+            class="bg-black text-white border border-black p-2 m-2
+                  text-lg rounded focus:outline-none focus:ring-2 focus:ring-white"
+          />
+          <button
+            type="submit"
+            class="px-3 py-1 mt-6 rounded border border-blue-200
+                               text-blue-300 hover:bg-blue-200
+                               hover:text-gray-900 transition"
+          >
+            LOGIN
+          </button>
+        </form>
+      </div>
+
+      {{ if .Error }}
+        <p class="text-red-500 mt-4">{{ .Error }}</p>
+      {{ end }}
+    </div>
+
+  <script src="/static/js/login/login.js" defer></script>
+</body>
+</html>

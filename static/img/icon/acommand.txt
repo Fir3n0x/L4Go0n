@@ -1,0 +1,4 @@
+windres myicon.rc -O coff -o myicon.res
+gcc main.c myicon.res -o test.exe
+
+format COFF (Common Object File Format)

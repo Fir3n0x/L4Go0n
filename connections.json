@@ -1,0 +1,35 @@
+{
+ "1756023665606": {
+  "name": "whoami",
+  "id": "1756023665606",
+  "ip": "192.168.1.109",
+  "os": "windows",
+  "port": "19482",
+  "lastConnection": "2025-08-24 10:22:56.951",
+  "type": "simple",
+  "icon": "notepad",
+  "reachable": false
+ },
+ "1756044102739": {
+  "name": "test",
+  "id": "1756044102739",
+  "ip": "—",
+  "os": "linux",
+  "port": "—",
+  "lastConnection": "Not Yet",
+  "type": "simple",
+  "icon": "none",
+  "reachable": false
+ },
+ "1756046348347": {
+  "name": "notepad",
+  "id": "1756046348347",
+  "ip": "192.168.1.109",
+  "os": "windows",
+  "port": "22937",
+  "lastConnection": "2025-08-24 16:55:54.547",
+  "type": "stealthy",
+  "icon": "notepad",
+  "reachable": false
+ }
+}

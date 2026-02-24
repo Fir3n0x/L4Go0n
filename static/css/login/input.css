@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* font-family */
+body {
+  @apply bg-black text-gray-200;
+  font-family: 'Fira Code', monospace;
+}
+
+/* Fade-in global */
+.fade-in {
+  animation: fadeIn 1.5s ease-out forwards;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@layer components {
+  /* Main card */
+  .login-card {
+    @apply bg-black rounded-lg w-full max-w-md
+           px-8 py-16 min-h-[32rem] relative;
+
+    /* black shadow at the left and bottom */
+    box-shadow: -4px 4px 12px rgba(0,0,0,0.8);
+  }
+
+  /* Sub-map of inputs, smaller and neon */
+  .input-card {
+    @apply bg-black bg-opacity-80 border border-gray-700
+           rounded-lg w-10/12 mx-auto p-6 shadow-lg shadow-cyan-900;
+
+    /* slight translation */
+    transform: translateY(-1rem);
+  }
+}
+
+/* Glow effect */
+.neon-glow {
+  animation: neonPulse 6s infinite alternate ease-in-out;
+}
+
+@keyframes neonPulse {
+  0%   { filter: none; }
+  50%  { filter: drop-shadow(0 0 4px #0f6a6e) drop-shadow(0 0 8px #038358); }
+  100% { filter: none; }
+}
