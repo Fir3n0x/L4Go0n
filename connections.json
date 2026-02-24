@@ -1,26 +1,62 @@
 {
- "1762813511545": {
-  "name": "agent",
-  "id": "1762813511545",
-  "ip": "—",
+ "1756482712823": {
+  "name": "agent01",
+  "id": "1756482712823",
+  "ip": "172.25.16.1",
   "os": "windows",
-  "srcport": "—",
-  "dstport": "22",
-  "lastConnection": "Not Yet",
+  "srcport": "8624",
+  "dstport": "53",
+  "lastConnection": "2025-08-29 17:54:10.555",
   "type": "simple",
-  "icon": "notepad-old",
+  "icon": "calc",
   "reachable": false
  },
- "1762813525170": {
-  "name": "agent1",
-  "id": "1762813525170",
+ "1756482721383": {
+  "name": "calc",
+  "id": "1756482721383",
   "ip": "—",
   "os": "windows",
   "srcport": "—",
-  "dstport": "22",
+  "dstport": "53",
   "lastConnection": "Not Yet",
   "type": "stealthy",
-  "icon": "notepad-old",
+  "icon": "calc",
+  "reachable": false
+ },
+ "1762381882501": {
+  "name": "test",
+  "id": "1762381882501",
+  "ip": "10.5.0.2",
+  "os": "windows",
+  "srcport": "39109",
+  "dstport": "22",
+  "lastConnection": "2025-11-05 23:32:27.245",
+  "type": "simple",
+  "icon": "notepad-plus-plus",
+  "reachable": false
+ },
+ "1762381995226": {
+  "name": "f",
+  "id": "1762381995226",
+  "ip": "—",
+  "os": "windows",
+  "srcport": "—",
+  "dstport": "53",
+  "lastConnection": "Not Yet",
+  "type": "stealthy",
+  "icon": "settings",
+  "reachable": false
+ },
+ "1762382646095": {
+  "name": "fl",
+  "id": "1762382646095",
+  "ip": "10.5.0.2",
+  "os": "windows",
+  "srcport": "23515",
+  "dstport": "80",
+  "lastConnection": "2025-11-05 23:45:58.098",
+  "type": "stealthy",
+  "icon": "settings",
   "reachable": false
  }
 }

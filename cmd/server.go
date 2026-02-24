@@ -198,6 +198,8 @@ func HandleConnection(conn net.Conn) {
 
 	// ----------------------------------------- > Execute commands stored when the client just connect
 	stored := MyCommandStore.GetCommands(id)
+	doneStored := make(chan struct{})
+
 	go func() {
 		for _, cmd := range stored {
 			cmdID := generateCmdID()
@@ -220,6 +222,7 @@ func HandleConnection(conn net.Conn) {
 				}
 			}
 		}
+		close(doneStored) // Signal that stored commands are done
 	}()
 
 	// ----------------------------------------- > Execute commands when the client is already connected
@@ -228,6 +231,7 @@ func HandleConnection(conn net.Conn) {
 	MyCommandStore.AddListener(id, cmdCh)
 	defer MyCommandStore.RemoveListener(id, cmdCh)
 
+	<-doneStored // Wait for stored commands to finish before live commands
 	for cmd := range cmdCh {
 		cmdID := generateCmdID()
 		pendingMu.Lock()

