@@ -35,9 +35,9 @@ func SendCommand(id string, cmd string) error {
 		return err
 	}
 
-	if client.Reachable && client.Conn != nil {
+	if client.Reachable && client.ConnServer != nil {
 		// Client already connected
-		_, err := client.Conn.Write([]byte(cmd + "\n"))
+		_, err := client.ConnServer.Write([]byte(cmd + "\n"))
 		if err != nil {
 			LogInfo.Printf("[-] Failed to send queued command to %s: %v", id, err)
 			return err
@@ -81,10 +81,10 @@ func ShutDownConnection(id string) error {
 	}
 
 	// If the client is connected, close the running connection
-	if client.Conn != nil {
-		if err := client.Conn.Close(); err != nil {
-			LogInfo.Printf("[!] Failed to close connection for client %s: %v", id, err)
-			return fmt.Errorf("failed to close connection for client with ID '%s'", id)
+	if client.ConnServer != nil {
+		if err := client.ConnServer.Close(); err != nil {
+			LogInfo.Printf("[!] Failed to close connection for client (server side) %s: %v", id, err)
+			return fmt.Errorf("failed to close connection (server side) for client with ID '%s'", id)
 		}
 	}
 
@@ -107,9 +107,9 @@ func DelConnection(id string) error {
 	}
 
 	// If the client is connected, close the running connection
-	if client.Conn != nil {
-		if err := client.Conn.Close(); err != nil {
-			LogInfo.Printf("[!] Failed to close connection for client %s: %v", id, err)
+	if client.ConnServer != nil {
+		if err := client.ConnServer.Close(); err != nil {
+			LogInfo.Printf("[!] Failed to close connection (server side) for client %s: %v", id, err)
 		}
 	}
 
@@ -132,11 +132,12 @@ func DelConnection(id string) error {
 	// Delete client in the ClientStore
 	MyClientStore.Lock()
 	storeClient, exists := MyClientStore.Connections[id]
-	if exists && storeClient.Conn != nil {
-		if err := storeClient.Conn.Close(); err != nil {
+	if exists && storeClient.ConnServer != nil {
+		if err := storeClient.ConnServer.Close(); err != nil {
 			LogInfo.Printf("[!] Failed to close stored connection for client %s: %v", id, err)
 		}
 	}
+
 	delete(MyClientStore.Connections, id)
 	if err := MyClientStore.Save(); err != nil {
 		MyClientStore.Unlock()

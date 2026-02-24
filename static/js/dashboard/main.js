@@ -128,6 +128,8 @@ function showTab(tabId) {
   if (tabId === 'agents') loadAgents();
   else if (tabId === 'graph') {
     loadGraph();
+  } else if (tabId === 'preset') {
+    loadPresets();
   }
   loadConnections();
   loadCommands();
@@ -324,7 +326,7 @@ function sendCommand() {
   const cmd = document.getElementById('in-command').value
 
   if (!watched.size) {
-    alert("No connection selected...")
+    alert("No agent selected...")
     return
   }
 

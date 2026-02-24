@@ -82,7 +82,8 @@ func (cl *ClientStore) AddClient(in_c Client) error {
 	} else if in_c.Reachable != cl.Connections[clientId].Reachable {
 		client := cl.Connections[clientId]
 		client.Reachable = in_c.Reachable
-		client.Conn = in_c.Conn
+		client.ConnServer = in_c.ConnServer
+		client.ConnProxy = in_c.ConnProxy
 		cl.Connections[clientId] = client
 
 		return cl.Save()

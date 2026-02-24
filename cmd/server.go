@@ -3,6 +3,7 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"strings"
@@ -16,10 +17,12 @@ type Client struct {
 	ID            string   `json:"id"`
 	IP            string   `json:"ip"`
 	OS            string   `json:"os"`
-	PORT          string   `json:"port"`
+	SrcPort       string   `json:"srcport"`
+	DstPort       string   `json:"dstport"`
 	LastConnexion string   `json:"lastConnection"`
 	TYPE          string   `json:"type"`
-	Conn          net.Conn `json:"-"`
+	ConnServer    net.Conn `json:"-"`
+	ConnProxy     net.Conn `json:"-"`
 	Icon          string   `json:"icon"`
 	Reachable     bool     `json:"reachable"`
 }
@@ -36,11 +39,13 @@ var (
 	PortServer = "5437"
 	// Retrieve Server IP address
 	IPServer = GetLocalIP()
+	// Incoming ports
+	ProxyPorts = []string{"22", "53", "80", "443", "587", "993"}
 )
 
 // Main routine to handle each client's connection
 func HandleConnection(conn net.Conn) {
-	// Create a reader buffer0
+	// Create a reader buffer
 	idBuf := bufio.NewReader(conn)
 
 	// Retrieve client Id
@@ -79,10 +84,10 @@ func HandleConnection(conn net.Conn) {
 
 	// Update client values with new ones
 	client.IP = host
-	client.PORT = port
+	client.SrcPort = port
 	// client.LastConnexion = time.Now().Format(time.RFC3339)
 	client.LastConnexion = time.Now().Format("2006-01-02 15:04:05.000")
-	client.Conn = conn
+	client.ConnServer = conn
 	client.Reachable = true
 
 	// Save new value of the client in the ClientStore
@@ -235,6 +240,60 @@ func HandleConnection(conn net.Conn) {
 	}
 }
 
+// Handle connection through proxy
+func handleConnection(clientConn net.Conn) {
+	// Handle proxy connection with client
+	target := net.JoinHostPort(IPServer, PortServer)
+	serverConn, err := net.Dial("tcp", target)
+	if err != nil {
+		log.Printf("Connection error towards server: %v", err)
+		clientConn.Close()
+		return
+	}
+
+	// Bidirectionnal transfert
+
+	// Transfert client -> server
+	go func() { // Incoming port to port server
+		_, err := io.Copy(serverConn, clientConn)
+		if err != nil {
+			log.Printf("Client -> Server transfer error: %v", err)
+		}
+		serverConn.Close()
+		clientConn.Close()
+	}()
+
+	// Transfert server -> client
+	go func() { // Port server to incoming port
+		_, err := io.Copy(clientConn, serverConn)
+		if err != nil {
+			log.Printf("Server -> Client transfer error: %v", err)
+		}
+		serverConn.Close()
+		clientConn.Close()
+	}()
+}
+
+// Create proxy to redirect port 22, 80, 443, ... to 5437
+func StartProxy(port string) {
+	target := fmt.Sprintf("%s:%s", IPServer, PortServer)
+	listener, err := net.Listen("tcp", ":"+port)
+	if err != nil {
+		log.Fatalf("Error listening on port %s: %s", port, err)
+	}
+	LogInfo.Printf("Proxy enable on port %s -> %s", port, target)
+
+	for {
+		clientConn, err := listener.Accept()
+		if err != nil {
+			LogInfo.Printf("Error when accepting on port %s: %v", port, err)
+			continue
+		}
+
+		go handleConnection(clientConn)
+	}
+}
+
 // Generate a unique temporary Id to deal with all client connections
 func generateCmdID() string {
 	return fmt.Sprintf("%d", time.Now().UnixNano())
@@ -245,7 +304,7 @@ func markClientUnreachable(id string) {
 	ClientsMu.Lock()
 	defer ClientsMu.Unlock()
 	if client, ok := Clients[id]; ok {
-		client.Conn.Close()
+		client.ConnServer.Close()
 		client.Reachable = false
 		MyClientStore.Connections[id] = *client
 		_ = MyClientStore.Save()

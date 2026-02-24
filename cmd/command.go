@@ -39,7 +39,7 @@ func (cs *CommandStore) Load() error {
 	return json.Unmarshal(data, &cs.Commands)
 }
 
-// Save new CommandStore in commands.json file
+// Save new CommandStore into commands.json file
 func (cs *CommandStore) Save() error {
 	data, err := json.MarshalIndent(cs.Commands, "", "  ")
 	if err != nil {

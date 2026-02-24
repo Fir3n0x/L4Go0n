@@ -91,7 +91,7 @@ function loadConnections() {
       for (const id in data) {
         const info = data[id];
         agentName.set(id, info.name);
-        const ok = [id, info.name, info.ip, info.os, info.port, info.lastConnection, info.type, info.reachable.toString()]
+        const ok = [id, info.name, info.ip, info.os, info.srcport, info.dstport, info.lastConnection, info.type, info.reachable.toString()]
           .some(s => s.toLowerCase().includes(filter));
         if (!ok) continue;
 
@@ -146,7 +146,7 @@ function loadAgents() {
 
       for (const id in data) {
         const info = data[id];
-        const ok = [id, info.name, info.ip, info.os, info.port, info.lastConnection, info.type, info.reachable.toString()]
+        const ok = [id, info.name, info.ip, info.os, info.srcport, info.dstport, info.lastConnection, info.type, info.reachable.toString()]
           .some(s => s.toLowerCase().includes(filter));
         if (!ok) continue;
 
@@ -165,7 +165,8 @@ function loadAgents() {
           <td class="px-4 py-2 text-green-300">${nameCellContent}</td>
           <td class="px-4 py-2">${id}</td>
           <td class="px-4 py-2">${info.ip}</td>
-          <td class="px-4 py-2">${info.port}</td>
+          <td class="px-4 py-2">${info.srcport}</td>
+          <td class="px-4 py-2">${info.dstport}</td>
           <td class="px-4 py-2">${info.os}</td>
           <td class="px-4 py-2">${info.type}</td>
           <td class="px-4 py-2">${info.lastConnection}</td>
@@ -175,7 +176,7 @@ function loadAgents() {
           <td id="info-reachable-agent" class="px-4 py-2 ${info.reachable ? 'text-green-600' : 'text-red-400'}">${info.reachable ? 'true' : 'false'}</td>
           <td class="px-4 py-2">
             <button title="Download Agent" class="bg-black hover:bg-blue-800 text-white px-2 py-1 rounded text-xs"
-              onclick="downloadAgent('${info.name}','${id}','${info.os}','${info.type}', '${info.icon}')">
+              onclick="downloadAgent('${info.name}','${id}','${info.os}','${info.type}', '${info.icon}', '${info.dstport}')">
           📥
             </button>
             <button title="Shut down" class="bg-black hover:bg-blue-800 text-white px-2 py-1 rounded text-xs"
@@ -283,8 +284,149 @@ function loadGraph() {
     };
 }
 
+/* ------------------------- */
+/*  Presets                  */
+/* ------------------------- */
+function loadPresets() {
+  fetch('/api/command-template-presets')
+    .then(res => res.ok ? res.json() : Promise.reject())
+    .then(presets => {
+      const container = document.getElementById('preset-list');
+      document.getElementById('selected-preset').textContent = "NONE";
+      document.getElementById('preset-content').innerHTML = ''; // Clear content overview
+      
+      const cmdDefaultBlock = document.createElement('p');
+      cmdDefaultBlock.className = 'text-gray-400';
+      cmdDefaultBlock.textContent = 'No preset selected.';
+      document.getElementById('preset-content').appendChild(cmdDefaultBlock);
 
+      container.innerHTML = ''; // Clear existing
 
+      Object.keys(presets).forEach(name => {
+        const tag = document.createElement('div');
+        tag.className = 'preset-tag';
+
+        const label = document.createElement('span');
+        label.textContent = name;
+
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '✕';
+        closeBtn.className = 'delete-btn';
+        closeBtn.onclick = () => deletePreset(name);
+
+        tag.addEventListener('click', () => {
+          // Update selected preset
+          document.getElementById('selected-preset').textContent = name;
+
+          // Retrieve content field
+          const content = document.getElementById('preset-content');
+          content.innerHTML = ''; // Empty content
+
+          // Display each command
+          presets[name].forEach((cmd, index) => {
+            const cmdBlock = document.createElement('div');
+            cmdBlock.className = 'bg-gray-700 text-white px-3 py-2 rounded mb-2';
+            cmdBlock.textContent = `${index + 1}. ${cmd}`;
+            content.appendChild(cmdBlock);
+          });
+        })
+
+        tag.appendChild(label);
+        tag.appendChild(closeBtn);
+        container.appendChild(tag);
+      });
+    })
+    .catch(() => {
+      console.error('Failed to load presets');
+    });
+}
+
+function loadModalPresets() {
+  fetch('/api/command-template-presets')
+    .then(res => res.ok ? res.json() : Promise.reject())
+    .then(presets => {
+      const container = document.getElementById('preset-template-list');
+      container.innerHTML = '';
+
+      Object.entries(presets).forEach(([name, commands]) => {
+        const tag = document.createElement('div');
+        tag.className = 'preset-tag bg-gray-700 text-white px-3 py-2 rounded cursor-pointer flex justify-between items-center hover:bg-gray-600';
+
+        const label = document.createElement('span');
+        label.textContent = name;
+
+        tag.appendChild(label);
+        tag.onclick = () => {
+          commands.forEach(cmd => addToQueue(cmd));
+        };
+
+        container.appendChild(tag);
+      });
+
+      enableQueueDragAndDrop();
+    })
+    .catch(() => console.error('Error when loading presets for modal'));
+}
+
+function addToQueue(commandText) {
+  const queue = document.getElementById('queue-template-list');
+
+  const item = document.createElement('div');
+  item.className = 'queue-item bg-gray-600 text-white px-3 py-2 rounded mb-2 cursor-move flex justify-between items-center';
+  item.setAttribute('draggable', 'true');
+
+  const text = document.createElement('span');
+  text.textContent = commandText;
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.textContent = '✕';
+  deleteBtn.className = 'ml-2 text-red-400 hover:text-red-600';
+  deleteBtn.onclick = () => item.remove();
+
+  item.appendChild(text);
+  item.appendChild(deleteBtn);
+
+  // Drag events
+  item.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('text/plain', null);
+    item.classList.add('dragging');
+  });
+
+  item.addEventListener('dragend', () => {
+    item.classList.remove('dragging');
+  });
+
+  queue.appendChild(item);
+}
+
+function enableQueueDragAndDrop() {
+  const queue = document.getElementById('queue-template-list');
+
+  queue.addEventListener('dragover', e => {
+    e.preventDefault();
+    const dragging = document.querySelector('.dragging');
+    const afterElement = getDragAfterElement(queue, e.clientY);
+    if (afterElement == null) {
+      queue.appendChild(dragging);
+    } else {
+      queue.insertBefore(dragging, afterElement);
+    }
+  });
+}
+
+function getDragAfterElement(container, y) {
+  const draggableElements = [...container.querySelectorAll('.queue-item:not(.dragging)')];
+
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
 
 /* ------------------------- */
 /*  RAPPORTS                 */

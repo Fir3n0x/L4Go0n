@@ -411,11 +411,12 @@ func Register(e *echo.Echo) {
 	// Submit a new agent
 	e.POST("/api/submit-agent", isAuthenticated(func(c echo.Context) error {
 		var payload struct {
-			Name string `json:"name"`
-			ID   string `json:"id"`
-			OS   string `json:"os"`
-			Type string `json:"type"`
-			Icon string `json:"icon"`
+			Name    string `json:"name"`
+			ID      string `json:"id"`
+			OS      string `json:"os"`
+			Type    string `json:"type"`
+			Icon    string `json:"icon"`
+			DstPort string `json:"dstport"`
 		}
 		if err := c.Bind(&payload); err != nil {
 			return c.String(http.StatusBadRequest, "Invalid payload")
@@ -426,10 +427,12 @@ func Register(e *echo.Echo) {
 			ID:            payload.ID,
 			IP:            "—",
 			OS:            payload.OS,
-			PORT:          "—",
+			SrcPort:       "—",
+			DstPort:       payload.DstPort,
 			LastConnexion: "Not Yet",
 			TYPE:          payload.Type,
-			Conn:          nil,
+			ConnServer:    nil,
+			ConnProxy:     nil,
 			Icon:          payload.Icon,
 			Reachable:     false,
 		}
@@ -453,11 +456,12 @@ func Register(e *echo.Echo) {
 	// Create an agent
 	e.POST("/api/build-agent", isAuthenticated(func(c echo.Context) error {
 		var payload struct {
-			Name string `json:"name"`
-			ID   string `json:"id"`
-			OS   string `json:"os"`
-			Type string `json:"type"`
-			Icon string `json:"icon"`
+			Name    string `json:"name"`
+			ID      string `json:"id"`
+			OS      string `json:"os"`
+			Type    string `json:"type"`
+			Icon    string `json:"icon"`
+			DstPort string `json:"dstport"`
 		}
 		if err := c.Bind(&payload); err != nil {
 			return c.String(http.StatusBadRequest, "Invalid payload")
@@ -481,7 +485,7 @@ func Register(e *echo.Echo) {
 		codeBytes, err := handlers.GenerateAgentSource(handlers.AgentConfig{
 			ID:          payload.ID,
 			IP_SERVER:   cmd.IPServer,
-			PORT_SERVER: cmd.PortServer,
+			PORT_SERVER: payload.DstPort,
 			TYPE:        payload.Type,
 			OS:          payload.OS,
 		})
@@ -519,6 +523,53 @@ func Register(e *echo.Echo) {
 
 		// Send compiled file
 		return c.Attachment(exePath, fmt.Sprintf("%s%s", payload.ID, extension))
+	}))
+
+	// Save a new command template preset in the backend
+	e.POST("/api/save-new-command-template-preset", isAuthenticated(func(c echo.Context) error {
+		var payload struct {
+			Name string `json:"name"`
+			Commands []string `json:"commands"`
+		}
+		
+		if err := c.Bind(&payload); err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid payload"})
+		}
+
+		// Add preset to the store
+		err := cmd.MyPresetCommandStore.AddPreset(payload.Name, payload.Commands)
+		if err != nil {
+			fmt.Println("AddPreset error:", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to save preset: " + err.Error()})
+		}
+
+		return c.JSON(http.StatusOK, map[string]string{"status": "Preset saved successfully"})
+	}))
+
+	// Retrieve all command template presets
+	e.GET("/api/command-template-presets", isAuthenticated(func(c echo.Context) error {
+		data, err := os.ReadFile(cmd.MyPresetCommandStore.File)
+		if err != nil {
+			if os.IsNotExist(err) {
+				// If file does not exist, return empty map
+				return c.JSON(http.StatusOK, map[string][]string{})
+			}
+			return c.String(http.StatusInternalServerError, "Error reading preset commands file: "+err.Error())
+		}
+
+		var presets map[string][]string
+		if err := json.Unmarshal(data, &presets); err != nil {
+			return c.String(http.StatusInternalServerError, "Error parsing preset commands JSON: "+err.Error())
+		}
+
+		return c.JSON(http.StatusOK, presets)
+	}))
+
+	// Delete a preset from the store
+	e.DELETE("/api/delete-preset/:name", isAuthenticated(func(c echo.Context) error {
+		presetName := c.Param("name")
+		cmd.MyPresetCommandStore.DeletePresetCommand(presetName)
+		return c.JSON(http.StatusOK, map[string]string{"status": "Preset deleted"})
 	}))
 
 	// Retrieve the content of an execution file report

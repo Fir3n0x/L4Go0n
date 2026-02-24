@@ -127,7 +127,9 @@ int main() {
     // Windows socket init
     WSADATA wsa;
     SOCKET sock;
+
     struct sockaddr_in server;
+
     char recvBuf[1024];
     char parseBuf[2048] = {0};
     int parseLen = 0;
@@ -137,6 +139,8 @@ int main() {
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
     setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+
+    // Server bind to retrieve info
     server.sin_addr.s_addr = inet_addr(SERVER_IP);
     server.sin_family = AF_INET;
     server.sin_port = htons(SERVER_PORT);

@@ -140,14 +140,6 @@ function closeCommandsModal() {
   modal.classList.add('hidden');
 }
 
-// close agent modal
-function closeAgentModal() {
-  const modal = document.getElementById('create-agent-modal');
-  modal.classList.remove('create-agent-modal');
-  modal.classList.add('hidden');
-}
-
-
 
 // Handle report Modal
 function toggleReportModal(filename, data) {
@@ -188,3 +180,22 @@ function toggleReportModal(filename, data) {
   };
 }
 
+// Open template command modal
+function openTemplateCommand() {
+  const modal = document.getElementById('template-command-modal');
+  modal.classList.remove('hidden');
+  loadModalPresets();
+}
+
+// Close template command modal
+function closeCommandTemplateModal() {
+  const modal = document.getElementById('template-command-modal');
+  modal.classList.add('hidden');
+}
+
+// Handle key event on template command modal
+document.getElementById('template-command-modal').addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeCommandTemplateModal();
+  }
+});

