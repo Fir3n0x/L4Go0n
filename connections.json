@@ -1,26 +1,26 @@
 {
- "1756286529458": {
-  "name": "36",
-  "id": "1756286529458",
+ "1762813511545": {
+  "name": "agent",
+  "id": "1762813511545",
   "ip": "—",
   "os": "windows",
   "srcport": "—",
   "dstport": "22",
   "lastConnection": "Not Yet",
   "type": "simple",
-  "icon": "none",
+  "icon": "notepad-old",
   "reachable": false
  },
- "1756305895893": {
-  "name": "lk",
-  "id": "1756305895893",
+ "1762813525170": {
+  "name": "agent1",
+  "id": "1762813525170",
   "ip": "—",
   "os": "windows",
   "srcport": "—",
   "dstport": "22",
   "lastConnection": "Not Yet",
-  "type": "simple",
-  "icon": "none",
+  "type": "stealthy",
+  "icon": "notepad-old",
   "reachable": false
  }
 }

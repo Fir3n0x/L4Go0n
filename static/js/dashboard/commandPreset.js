@@ -17,6 +17,24 @@ function closeNewCommandTemplateModal() {
     document.getElementById('new-preset-modal').classList.add('hidden');
 }
 
+// Handle closing modal with escape key
+document.addEventListener('keydown', (e) => {
+  const createPresetModal = document.getElementById('new-preset-modal');
+  const isPresetCreationVisible = !createPresetModal.classList.contains('hidden');
+
+  if (e.key === 'Escape' && isPresetCreationVisible) {
+    createPresetModal.classList.add('hidden');
+  }
+})
+
+// Handle adding command to preset with enter key
+document.getElementById('command-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    addCommandToPreset();
+  }
+});
+
 // Add new command to the new preset
 function addCommandToPreset() {
   const input = document.getElementById('command-input');
@@ -41,7 +59,7 @@ function renderCommandList() {
 
   currentCommands.forEach((cmd, index) => {
     const li = document.createElement('li');
-    li.className = "bg-gray-700 px-3 py-2 rounded flex justify-between items-center cursor-move";
+    li.className = "bg-gray-700 px-3 py-2 rounded cursor-move";
     li.draggable = true;
     li.dataset.index = index;
 
@@ -60,8 +78,10 @@ function renderCommandList() {
     };
 
     li.innerHTML = `
-      <span>${cmd}</span>
-      <button onclick="removeCommand(${index})" class="text-red-400 hover:text-red-200 ml-4">✖</button>
+      <div class="relative w-full pr-8">
+        <span class="block whitespace-pre-wrap break-words w-full">${cmd}</span>
+        <button onclick="removeCommand(${index})" class="absolute top-0 right-0 text-red-400 hover:text-red-200">✖</button>
+      </div>
     `;
     list.appendChild(li);
   });
@@ -148,7 +168,99 @@ function deletePreset(name) {
   });
 }
 
-// Validate a queued command template list to add to agent's commands
-function validateCommandTemplatePreset() {
+// Modify a preset already created
+async function modifyPreset() {
+  const selectedPreset = document.getElementById('selected-preset').textContent;
+  if (selectedPreset === "NONE") {
+    alert("Please select a preset to modify it.");
+    return;
+  }
 
+  const res = await fetch('/api/command-template-presets');
+  const presets = await res.json();
+
+  const commands = presets[selectedPreset] || [];
+
+  document.getElementById('modify-preset-name').value = selectedPreset;
+  document.getElementById('modify-preset-editor').value = commands.join('\n');
+  document.getElementById('modify-preset-modal').classList.remove('hidden');
+
+  makeModalDraggable('floating-content-window-modify-preset', 'modal-header-modify-preset');
+}
+
+// Save the modified preset modal
+function saveModifyPreset() {
+  const name = document.getElementById('modify-preset-name').value.trim();
+  const rawText = document.getElementById('modify-preset-editor').value;
+
+  if (!name) {
+    alert("Preset name is required.");
+    return;
+  }
+
+  const commands = rawText
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
+
+  const payload = {
+    name: name,
+    commands: commands
+  };
+
+  fetch('/api/save-new-command-template-preset', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  })
+    .then(response => {
+      if (!response.ok) throw new Error("Failed to save preset");
+      return response.json();
+    })
+    .then(data => {
+      closeModifyPresetModal();
+      loadPresets();
+    })
+    .catch(err => {
+      console.error("Error saving preset:", err);
+      alert("Failed to save preset.");
+    });
+}
+
+// Close modify preset modal
+function closeModifyPresetModal() {
+  document.getElementById('modify-preset-modal').classList.add('hidden');
+}
+
+// Validate a queued command template list to add to agent's commands
+async function validateCommandTemplatePreset() {
+  const queuePreset = document.querySelectorAll('#queue-template-list .queue-item');
+
+  if (!watched.size) {
+    alert("No agent selected...")
+    return
+  }
+
+  try {
+    const res = await fetch('/api/command-template-presets');
+    if (!res.ok) throw new Error('Failed to fetch presets');
+    closeCommandTemplateModal();
+    const presets = await res.json();
+
+    for (const item of queuePreset) {
+      const selectedPreset = item.querySelector('span')?.textContent;
+
+      if (selectedPreset && presets[selectedPreset]) {
+        const commands = presets[selectedPreset];
+
+        for (const cmd of commands) {
+          await sendCommand(cmd);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error when retrieving presets', err);
+  }
 }

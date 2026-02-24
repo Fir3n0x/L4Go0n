@@ -194,8 +194,11 @@ function closeCommandTemplateModal() {
 }
 
 // Handle key event on template command modal
-document.getElementById('template-command-modal').addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
+document.addEventListener('keydown', (e) => {
+  const modal = document.getElementById('template-command-modal');
+  const isVisible = !modal.classList.contains('hidden');
+
+  if (e.key === 'Escape' && isVisible) {
     closeCommandTemplateModal();
   }
 });
