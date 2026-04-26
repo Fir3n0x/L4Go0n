@@ -2,9 +2,6 @@ package cmd
 
 import (
 	"bufio"
-	"crypto/ecdsa"
-	"crypto/x509"
-	"encoding/pem"
 	"fmt"
 	"io"
 	"log"
@@ -50,20 +47,6 @@ var (
 func HandleConnection(conn net.Conn) {
 	// Create a reader buffer
 	idBuf := bufio.NewReader(conn)
-
-	// Retrieve client public key
-	clientPubBytes, err := idBuf.ReadString('\n')
-	if err != nil {
-		LogInfo.Printf("[!] Client: failed to retrieve client public key: %v\n", err)
-		return
-	}
-
-	block, _ := pem.Decode(clientPubBytes)
-	pubKeyInterface, _ := x509.ParsePKIXPublicKey(block.Bytes)
-	clientPub := pubKeyInterface.(*ecdsa.PublicKey)
-
-	// Compute shared secret
-	x, _ := (*&ecdsa.PublicKey{}).ServerPublicKey.PublicKey.Curve.ScalarMult(clientPub.X, clientPub.Y, ServerPublicKey)
 
 	// Retrieve client Id
 	id, err := idBuf.ReadString('\n')
